@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            user-select: none;
+        }
+
+        .toggle-all {
+            margin: 0 0px 0px 8px;
+            padding: 0;
+            width: 15px;
+            text-align: center;
+            height: 24px;
+            font-size: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: translateX(10px);
+            -webkit-transform: rotate(90deg);
+            transform: rotate(90deg);
+            background-color: lightcyan;
+        }
+
+        .toggle-all::after {
+            content: '❯';
+            font-size: 18px;
+            color: #e6e6e6;
+            /* padding: 10px 10px 10px 0; */
+        }
+
+        #todoinput {
+
+            margin-left: 30px;
+        }
+
+        div {
+            margin-bottom: 20px;
+        }
+
+        ul {
+            margin-left: 20px;
+            padding: 0;
+        }
+
+        button {
+            margin-left: 10px
+        }
+
+        span {
+            text-align: center;
+        }
+
+        .completed {
+            text-decoration: line-through;
+
+
+        }
+
+        .current {
+            background-color: red;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <todo-input @data-click="resHandler" @allclick="allHandler"></todo-input>
+        <ul v-show="view == 'All'" key="all">
+            <new-item v-for="(item,i) in values" :key="item.id" :id="item.id" :text="item.title"
+                @change-checkbox="CheckBox" :index="i" :class="{'completed':item.completed}"
+                @remoitem="removeHandler(i)" :iscompleted="item.completed" @dbl-handler="dblHandler">
+            </new-item>
+        </ul>
+        <ul v-show="view == 'Active'" key="active">
+            <new-item v-for="(item,i) in values" :key="item.id" :id="item.id" :text="item.title" v-if="!item.completed"
+                @change-checkbox="CheckBox" :class="{'completed':item.completed}" :index="i"
+                @remoitem="removeHandler(i)" :iscompleted="item.completed" @dbl-handler="dblHandler">
+            </new-item>
+        </ul>
+        <ul v-show="view == 'Complated'" key="complated">
+            <new-item v-for="(item,i) in values" :key="item.id" :id="item.id" :text="item.title" v-if="item.completed"
+                @change-checkbox="CheckBox" :index="i" :class="{'completed':item.completed}"
+                :iscompleted="item.completed" @remoitem="removeHandler(i)" @dbl-handler="dblHandler">
+            </new-item>
+        </ul>
+        <div>
+            <change-item>{{flength}} items left</change-item>
+            <change-item v-for="(tab,i) in list_tabs" :key="tab.title" @change-tab="changeTab(i)"
+                :class="{'current':tab.isdown} ">
+                {{tab.name}}
+            </change-item>
+            <change-item @click.native="del">Clear completed</change-item>
+        </div>
+    </div>
+
+    <script>
+        //input框添加和下拉
+        Vue.component("todo-input", {
+            props: [""],
+            data: function () {
+                return {
+                    text: '',
+                }
+            },
+            template: `
+			<div>
+                <label class="toggle-all" @click="$emit('allclick')"  ></label>
+                <input type="text" v-model="text" id="todoinput" @keyup.enter="inputvalue">
+                <button  @click="inputvalue" >add</button>
+            </div>`,
+            methods: {
+                inputvalue() {
+                    // console.log(this.text);
+                    this.$emit('data-click', this.text, Math.random().toString())
+                    this.text = "";
+                }
+            }
+        })
+        // li列表
+        Vue.component("new-item", {
+            props: ["text", "iscompleted", "index", "id"],
+            data: function () {
+                return {
+                    isDown: false,
+                    bool: true,
+                }
+            },
+            template: `<li>
+                <input type="checkbox"  :checked="iscompleted"  @change="changeH" />
+                <span  v-show="bool" @dblclick="dblClick" >{{text}}</span>
+				<input v-show="!bool" :value="text"   @blur="blurHandler($event)" />
+                <button @click="$emit('remoitem')">remove</button>
+            </li>`,
+            methods: {
+                changeH() {
+                    this.$emit('change-checkbox', this.index, this.isDown)
+                },
+                dblClick() {
+                    this.bool = false
+                },
+                blurHandler(e) {
+                    this.bool = true
+                    this.$emit('dbl-handler', e.target.value, this.id);
+                }
+            }
+        })
+        // 切换视图
+        Vue.component("change-item", {
+            props: [""],
+            data: function () {
+                return {
+                    name: "current",
+                }
+            },
+            template: `
+            <button 
+                @click="$emit('change-tab')" >
+                <slot></slot>
+            </button>`,
+            methods: {
+            }
+        })
+        let app = new Vue({
+            el: "#app",
+            data: {
+                view: "All",
+                text: "",
+                values: [{ title: "js", completed: false, id: "0.1414215263263161" }
+                    , { title: "vue", completed: false, id: "0.5315161361616" }
+                    , { title: "react", completed: false, id: "0.1414542623263161" }],
+                items_left: "",
+                list_tabs: [{ name: "all", title: "All", isdown: true },
+                { name: "active", title: "Active", isdown: false },
+                { name: "complated", title: "Complated", isdown: false }],
+                index: 0,
+                flength: 3
+
+            },
+            methods: {
+                resHandler(res, random) {
+                    if (!res) { return }
+                    this.values.push({ title: res, completed: false, id: random })
+                    this.items_left = this.values.length;
+                    this.filterLength();
+                },
+                //切换底部状态
+                changeTab(index) {
+                    this.list_tabs.forEach(element => {
+                        element.isdown = false;
+                    });
+                    this.list_tabs[index].isdown = true;
+                    this.view = this.list_tabs[index].title;
+                },
+                //记录是否完成
+                CheckBox(index, bool) {
+                    this.values[index].completed = !this.values[index].completed;
+                    this.filterLength();
+
+                },
+                removeHandler(i) {
+                    // console.log(i);
+                    this.values.splice(i, 1)
+                    this.filterLength();
+                },
+                del() {
+                    let arr = this.filter();
+                    this.values = arr;
+                },
+                //筛选活跃的长度
+                filterLength() {
+                    let newarr = this.values.filter(item => !item.completed)
+                    this.flength = newarr.length;
+                },
+                //筛选完成的
+                filter() {
+                    return this.values.filter(item => !item.completed)
+                }
+                ,
+                allHandler() {
+                    if (this.view == "All") {
+                        //有一个为真
+                        let bool1 = this.values.some(function (item) {
+                            // console.log(item.completed);
+                            return item.completed
+                        })
+                        //全部为假
+                        let bool2 = this.values.every(function (item) {
+                            // console.log(item.completed);
+                            return !item.completed
+                        })
+                        //全部为真
+                        let bool3 = this.values.every(function (item) {
+                            // console.log(item.completed);
+                            return item.completed
+                        })
+                        //
+                        if (bool3) {
+                            this.values.forEach(element => {
+                                element.completed = false;
+                            });
+                        } else if (bool1 || bool2) {
+                            this.values.forEach(element => {
+                                element.completed = true;
+                            });
+                        }
+                        this.filterLength();
+                    }
+                },
+                dblHandler(text, id) {
+                    this.values = this.values.map((item) => {
+                        if (item.id == id) {
+                            console.log({ ...item, title: text })
+                            return { ...item, title: text }
+                        }
+                        return { ...item }
+                    })
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>

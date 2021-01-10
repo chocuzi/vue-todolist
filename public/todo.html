@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            user-select: none;
+        }
+
+        .toggle-all {
+            margin: 0 0px 0px 8px;
+            padding: 0;
+            width: 15px;
+            text-align: center;
+            height: 24px;
+            font-size: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: translateX(10px);
+            -webkit-transform: rotate(90deg);
+            transform: rotate(90deg);
+            background-color: lightcyan;
+        }
+
+        .toggle-all::after {
+            content: '❯';
+            font-size: 18px;
+            color: #e6e6e6;
+            /* padding: 10px 10px 10px 0; */
+        }
+
+
+        #todoinput {
+
+            margin-left: 30px;
+        }
+
+        ul {
+            margin: 0;
+            padding: 0;
+        }
+
+        /* li {
+        } */
+        .current {
+            border: 1px solid red;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <todo-input @data-click="resHandler"></todo-input>
+
+        <div>
+            <change-item @click="currentTab=tab" v-for="tab in tabs" :key="tab" :id="tab">{{tab}}</change-item>
+        </div>
+        <keep-alive>
+            <component v-bind:is="currentTabComponent" class="tab"></component>
+        </keep-alive>
+    </div>
+    <script>
+        //input框添加和下拉
+        Vue.component("todo-input", {
+            props: [""],
+            data: function () {
+                return {
+                    text: '',
+                }
+            },
+            template: `<div>
+                <label class="toggle-all" ></label>
+                <input type="text" v-model="text" id="todoinput">
+                <button  @click="inputvalue">add</button>
+            </div>`,
+            methods: {
+                inputvalue() {
+                    // console.log(this.text);
+                    this.$emit('data-click', this.text, Math.random().toString())
+                    this.text = "";
+                }
+            }
+        })
+        // li列表
+        Vue.component("tab-all", {
+            props: ["text"],
+            data: function () {
+                return {
+                    posts: [{ title: "js", completed: false, id: "0.1414215263263161" }, { title: "vue", completed: false, id: "0.5315161361616" }, { title: "react", completed: false, id: "0.1414542623263161" }]
+                }
+            },
+            template: `<li >
+                
+                <span v-for="post in posts"><input type="radio" >{{post.title}}</span>
+            </li>`
+        })
+        Vue.component("tab-active", {
+            props: ["text"],
+            data: function () {
+                return {
+                    posts: [{ title: "vue", completed: false, id: "0.5315161361616" }, { title: "react", completed: false, id: "0.1414542623263161" }]
+                }
+            },
+            template: `<li >
+                
+                <span v-for="post in posts"><input type="radio" >{{post.title}}</span>
+            </li>`
+        })
+        Vue.component("tab-complated", {
+            props: ["text"],
+            data: function () {
+                return {
+                    posts: [{ title: "js", completed: false, id: "0.1414215263263161" }, { title: "react", completed: false, id: "0.1414542623263161" }]
+                }
+            },
+            template: `<li >
+                
+                <span v-for="post in posts"><input type="radio" >{{post.title}}</span>
+            </li>`
+        })
+
+        // 切换视图
+        Vue.component("change-item", {
+            props: [],
+            data: function () {
+                return {
+                    all: true,
+                    active: false,
+                    complated: false,
+                    name: "current",
+                }
+            },
+            // <input type="text">
+            template: `<span 
+                @click="addClass($event)" >
+             <slot></slot>
+            </span>`,
+            methods: {
+                addClass(e) {
+                    // this.name = e.target.id
+                    // console.log(this["is" + e.target.id]);
+                    console.log(e.target.id);
+                    this[e.target.id] = true;;
+                }
+            }
+        })
+        let app = new Vue({
+            el: "#app",
+            data: {
+                view: "All",
+                text: "",
+                values: [{ title: "js", completed: false, id: "0.1414215263263161" }, { title: "vue", completed: false, id: "0.5315161361616" }, { title: "react", completed: false, id: "0.1414542623263161" }],
+                items_left: "",
+                currentTab: "all",
+                tabs: ["all", "active", "complated"]
+            },
+            computed: {
+                currentTabComponent: function () {
+                    console.log("tab-" + this.currentTab);
+                    return "tab-" + this.currentTab;
+                }
+            },
+            methods: {
+                resHandler(res, random) {
+                    this.values.push({ title: res, completed: false, id: random })
+                    this.items_left = this.values.length;
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>
